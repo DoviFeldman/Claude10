@@ -1,0 +1,47 @@
+/* X Blackout — black boxes over timeline media */
+
+.xblk-overlay {
+  position: absolute;
+  inset: 0;
+  background: #000;
+  z-index: 30;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: inherit;
+}
+
+/* subtle hint so a black box on a dark theme is still findable */
+.xblk-overlay::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.xblk-play {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  border: 3px solid #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.1s ease;
+  background: rgba(0, 0, 0, 0.4);
+}
+
+.xblk-play::after {
+  content: "";
+  border-style: solid;
+  border-width: 12px 0 12px 20px;
+  border-color: transparent transparent transparent #fff;
+  margin-left: 5px;
+}
+
+.xblk-overlay:hover .xblk-play {
+  transform: scale(1.08);
+}

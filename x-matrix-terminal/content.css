@@ -1,0 +1,190 @@
+/* X Matrix Terminal — green phosphor terminal over the X timeline.
+ *
+ * SCROLL SAFETY (this is what broke last time):
+ * X's timeline is a virtualized list — every post sits in an absolutely
+ * positioned [data-testid="cellInnerDiv"] with transform:translateY(...),
+ * inside a container whose height X computes. Breaking scroll happens when
+ * you (a) hide/reposition those cells or any ancestor of the timeline,
+ * (b) set overflow/height on html/body, or (c) turn the cells static.
+ * We do none of that. We only:
+ *   - hide SIBLINGS of the timeline (left nav, right sidebar, sticky bars),
+ *   - hide/restyle LEAF content inside cells.
+ * X re-measures cell heights itself, so the list re-flows and window
+ * scrolling keeps working forever.
+ */
+
+:root {
+  --mx-green: #00ff41;
+  --mx-dim: #00b32e;
+  --mx-dark: #005418;
+  --mx-faint: #012b0d;
+}
+
+/* ---- the void ---- */
+html,
+body {
+  background: #000 !important;
+}
+
+/* kill everything that isn't the reading column: left nav, right sidebar,
+   DM drawer, Grok chat drawer. All of these are SIBLINGS of the timeline,
+   never ancestors, so hiding them cannot affect scrolling. */
+header[role="banner"],
+[data-testid="sidebarColumn"],
+[data-testid="DMDrawer"],
+[data-testid="chat-drawer-root"] {
+  display: none !important;
+}
+
+/* ---- shove the column to the left like a terminal, full width ---- */
+main[role="main"] {
+  align-items: flex-start !important;
+}
+main[role="main"] > div,
+main[role="main"] > div > div {
+  width: 100% !important;
+  max-width: none !important;
+  margin: 0 !important;
+  justify-content: flex-start !important;
+}
+[data-testid="primaryColumn"] {
+  width: 100% !important;
+  max-width: 100% !important;
+  border: none !important;
+  padding: 0 24px 0 16px;
+}
+
+/* ---- terminal paint: everything mono, everything green, left-aligned ---- */
+main[role="main"],
+main[role="main"] * {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--mx-green) !important;
+  font-family: "Cascadia Mono", "JetBrains Mono", "Fira Code", "Menlo",
+    "Consolas", "Courier New", monospace !important;
+  text-align: left !important;
+  border-color: var(--mx-dark) !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.35);
+}
+main[role="main"] a {
+  color: var(--mx-green) !important;
+  text-decoration: none;
+}
+main[role="main"] a:hover {
+  text-decoration: underline;
+}
+::selection {
+  background: var(--mx-green);
+  color: #000;
+  text-shadow: none;
+}
+
+/* ---- strip the UI out of every post: icons, pictures, buttons ---- */
+main[role="main"] svg,
+main[role="main"] img,
+main[role="main"] video,
+[data-testid="tweetPhoto"],
+[data-testid="videoComponent"],
+[data-testid="videoPlayer"],
+[data-testid="card.wrapper"],
+[data-testid="previewInterstitial"],
+[data-testid="Tweet-User-Avatar"],
+[data-testid^="UserAvatar-Container"],
+[data-testid="birdwatch-pivot"],
+article [role="group"],
+[data-testid="caret"] {
+  display: none !important;
+}
+
+/* the empty avatar rail next to each post */
+article div:has(> [data-testid="Tweet-User-Avatar"]) {
+  display: none !important;
+}
+
+/* composer + tab bar: this is a reading terminal */
+[role="tablist"],
+[data-testid="toolBar"],
+[data-testid^="tweetTextarea"],
+[data-testid="tweetButtonInline"] {
+  display: none !important;
+}
+
+/* ---- each post = one log entry ---- */
+[data-testid="cellInnerDiv"] {
+  border-bottom: 1px dashed var(--mx-faint);
+}
+article {
+  padding-top: 6px !important;
+  padding-bottom: 6px !important;
+}
+[data-testid="User-Name"] {
+  font-weight: 700;
+}
+[data-testid="User-Name"]::before {
+  content: "> ";
+  color: var(--mx-dim);
+  font-weight: 700;
+}
+[data-testid="User-Name"] div[dir] + div div {
+  color: var(--mx-dim) !important; /* @handle and timestamp, dimmer */
+}
+[data-testid="tweetText"] {
+  font-size: 15px !important;
+  line-height: 1.55 !important;
+}
+[data-testid="socialContext"] {
+  color: var(--mx-dim) !important;
+}
+[data-testid="tweet-text-show-more-link"] {
+  color: var(--mx-dim) !important;
+}
+
+/* ---- injected [image]/[video] links ---- */
+.mx-media-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 18px;
+  margin: 6px 0 2px;
+  font-size: 13px;
+}
+.mx-media-links a {
+  color: var(--mx-dim) !important;
+}
+.mx-media-links a::before {
+  content: "└─ ";
+}
+
+/* ---- sticky top bars ("Home", "Post" + back arrow) get hidden by JS ---- */
+.mx-hidden {
+  display: none !important;
+}
+
+/* ---- CRT scanlines: a fixed, click-through overlay (cannot affect layout
+        or scrolling) ---- */
+body::after {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 2147483647;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(0, 0, 0, 0) 0px,
+    rgba(0, 0, 0, 0) 2px,
+    rgba(0, 40, 10, 0.12) 3px
+  );
+}
+
+/* green scrollbar to complete the look */
+::-webkit-scrollbar {
+  width: 10px;
+  background: #000;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--mx-dark);
+  border-radius: 5px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--mx-dim);
+}

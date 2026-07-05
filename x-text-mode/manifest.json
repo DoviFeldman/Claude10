@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "X Text Mode",
+  "version": "1.0.0",
+  "description": "Strips X (Twitter) down to pure text: no images, videos, profile pictures, or icons. Posts show the author's name, their text, and a link to open any media in a new tab. Same X font, same layout, just text.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://mobile.twitter.com/*"
+      ],
+      "css": ["content.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

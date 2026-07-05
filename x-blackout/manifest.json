@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "X Blackout — Hidden Media",
+  "version": "1.0.0",
+  "description": "Replaces every image and video on X (Twitter) with a black box. Click a box to reveal the image, or hit the play button to start a video.",
+  "content_scripts": [
+    {
+      "matches": [
+        "https://x.com/*",
+        "https://twitter.com/*",
+        "https://mobile.twitter.com/*"
+      ],
+      "css": ["content.css"],
+      "js": ["content.js"],
+      "run_at": "document_idle"
+    }
+  ]
+}

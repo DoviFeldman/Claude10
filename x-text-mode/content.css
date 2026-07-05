@@ -1,0 +1,68 @@
+/* X Text Mode — hide every visual element, keep the text.
+ *
+ * IMPORTANT scroll-safety rule: X's timeline is virtualized — posts live in
+ * absolutely-positioned [data-testid="cellInnerDiv"] wrappers. We NEVER hide,
+ * reposition, or resize those wrappers or any ancestor of the timeline; we
+ * only hide leaf content inside them. X re-measures cell heights on its own,
+ * so scrolling keeps working.
+ */
+
+/* ---- media: photos, videos, link-card art ---- */
+/* pbs.twimg.com serves post media, avatars, banners and card thumbnails.
+   Emoji images come from abs-0.twimg.com, so tweet-text emojis survive. */
+img[src*="pbs.twimg.com"],
+[data-testid="tweetPhoto"],
+[data-testid="videoComponent"],
+[data-testid="videoPlayer"],
+[data-testid="testCondensedMedia"],
+[data-testid="card.layoutLarge.media"],
+[data-testid="card.layoutSmall.media"],
+[data-testid="previewInterstitial"],
+article video {
+  display: none !important;
+}
+
+/* ---- profile pictures (and the whole avatar rail next to each post) ---- */
+[data-testid="Tweet-User-Avatar"],
+[data-testid^="UserAvatar-Container"] {
+  display: none !important;
+}
+article div:has(> [data-testid="Tweet-User-Avatar"]) {
+  display: none !important;
+}
+
+/* ---- icons: verified badges, action-bar glyphs, nav glyphs, logo ---- */
+article svg,
+header[role="banner"] svg,
+[data-testid="sidebarColumn"] svg,
+[data-testid="caret"] {
+  display: none !important;
+}
+
+/* ---- right sidebar: text only ---- */
+[data-testid="sidebarColumn"] img,
+[data-testid="sidebarColumn"] video {
+  display: none !important;
+}
+
+/* composer toolbar icon buttons (image/gif/poll pickers) */
+[data-testid="toolBar"] svg {
+  display: none !important;
+}
+
+/* ---- injected media links ---- */
+.xtm-media-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 8px 0 4px;
+  font-size: 14px;
+  line-height: 18px;
+}
+.xtm-media-links a {
+  color: #1d9bf0;
+  text-decoration: none;
+}
+.xtm-media-links a:hover {
+  text-decoration: underline;
+}

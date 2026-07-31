@@ -8,7 +8,7 @@ its own folder and is completely standalone — install whichever one you want
 |---|---|---|
 | `x-blackout/` | **X Blackout — Hidden Media** | Every image and video on the timeline is covered by a black box. Click a box to reveal the image; videos show a ▶ play button — click it and the video plays. |
 | `x-text-mode/` | **X Text Mode** | Removes all visual UI — images, videos, profile pictures, icons — everywhere (timeline **and** post detail pages). Each post is just the author's name, then their text (with X's native "Show more"), plus an `Open image ↗` / `Open video ↗` link that opens the media in a new tab. Keeps X's normal font, layout, and dark mode; the side areas stay but show text only. |
-| `x-matrix-terminal/` | **X Matrix Terminal** | Full green-on-black terminal. Sidebars, tab bar, composer, icons, buttons — gone. Left-aligned monospace text with a `>` prompt before each poster's name, `[image]` / `[video]` links under the text, CRT scanlines, and a green scrollbar. The page scrolls normally — see note below. |
+| `x-matrix-terminal/` | **X Matrix Terminal** | Full green-on-black terminal. Sidebars, tab bar, icons, buttons, the Grok chip — gone. Tight left-aligned monospace lines with a `>` prompt before each poster's name, `[image]` / `[video]` links under the text, CRT scanlines, and a green scrollbar. A `user@x:~$ [post]` prompt sits top-left for composing (images included). Mobile-optimised. The page scrolls normally — see note below. |
 
 ## Install (Load unpacked)
 
@@ -40,6 +40,21 @@ All three extensions deliberately avoid that:
 - When hidden media changes a post's height, X re-measures the cell and
   re-flows the list on its own — so infinite scroll keeps loading and the
   page keeps scrolling in all three modes, including post detail pages.
+
+## Posting from X Matrix Terminal
+
+The `[post]` prompt in the top-left opens **X's own compose dialog** rather
+than a home-made form — clicking it triggers X's hidden compose entry point,
+so posting, drafts, and image upload all run through X's real pipeline and
+keep working. The dialog is repainted as a terminal window: black, green,
+monospace, with the media button reading `[+image]` and the send button
+reading `[ Post ]`. GIF / poll / emoji / schedule / location buttons are
+hidden to keep it clean.
+
+On phones (`max-width: 700px`) the bottom tab bar, the floating compose FAB,
+and the top X-logo masthead are all removed, padding shrinks to the screen
+edge, and the scanline overlay is halved — the `[post]` prompt collapses to
+`~$ [post]`.
 
 ## Notes
 

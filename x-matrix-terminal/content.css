@@ -18,6 +18,8 @@
   --mx-dim: #00b32e;
   --mx-dark: #005418;
   --mx-faint: #012b0d;
+  --mx-mono: "Cascadia Mono", "JetBrains Mono", "Fira Code", "SF Mono", "Menlo",
+    "Consolas", "Courier New", monospace;
 }
 
 /* ---- the void ---- */
@@ -36,6 +38,17 @@ header[role="banner"],
   display: none !important;
 }
 
+/* ---- Grok: the floating button bottom-right, its drawer, its entry points.
+        JS also walks up to the floating wrapper so no empty box is left.
+        Scoped out of posts so a @grok mention or link in someone's text
+        isn't swallowed along with the chrome. ---- */
+[aria-label="grok" i]:not(article *),
+[aria-label^="grok " i]:not(article *),
+[data-testid*="grok" i]:not(article *),
+a[href*="/i/grok" i]:not(article *) {
+  display: none !important;
+}
+
 /* ---- shove the column to the left like a terminal, full width ---- */
 main[role="main"] {
   align-items: flex-start !important;
@@ -51,7 +64,8 @@ main[role="main"] > div > div {
   width: 100% !important;
   max-width: 100% !important;
   border: none !important;
-  padding: 0 24px 0 16px;
+  /* top padding clears the fixed [post] prompt bar */
+  padding: 34px 24px 0 16px;
 }
 
 /* ---- terminal paint: everything mono, everything green, left-aligned ---- */
@@ -60,12 +74,14 @@ main[role="main"] * {
   background-color: transparent !important;
   background-image: none !important;
   color: var(--mx-green) !important;
-  font-family: "Cascadia Mono", "JetBrains Mono", "Fira Code", "Menlo",
-    "Consolas", "Courier New", monospace !important;
+  font-family: var(--mx-mono) !important;
+  font-size: 14px;
+  line-height: 1.35 !important;
+  letter-spacing: 0.01em !important;
   text-align: left !important;
   border-color: var(--mx-dark) !important;
   box-shadow: none !important;
-  text-shadow: 0 0 6px rgba(0, 255, 65, 0.35);
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.45);
 }
 main[role="main"] a {
   color: var(--mx-green) !important;
@@ -80,10 +96,13 @@ main[role="main"] a:hover {
   text-shadow: none;
 }
 
-/* ---- strip the UI out of every post: icons, pictures, buttons ---- */
-main[role="main"] svg,
-main[role="main"] img,
-main[role="main"] video,
+/* ---- strip the UI out of every post: icons, pictures, buttons ----
+   The :not([role="dialog"] *) guards matter only when X happens to render
+   the compose modal inside main instead of #layers — the composer keeps its
+   icons and image thumbnails either way. */
+main[role="main"] svg:not([role="dialog"] *),
+main[role="main"] img:not([role="dialog"] *),
+main[role="main"] video:not([role="dialog"] *),
 [data-testid="tweetPhoto"],
 [data-testid="videoComponent"],
 [data-testid="videoPlayer"],
@@ -102,21 +121,30 @@ article div:has(> [data-testid="Tweet-User-Avatar"]) {
   display: none !important;
 }
 
-/* composer + tab bar: this is a reading terminal */
-[role="tablist"],
-[data-testid="toolBar"],
-[data-testid^="tweetTextarea"],
-[data-testid="tweetButtonInline"] {
+/* inline composer + tab bar in the timeline: this is a reading terminal.
+   Scoped to main so the real compose dialog (see below) stays usable. */
+main[role="main"] [role="tablist"]:not([role="dialog"] *),
+main[role="main"] [data-testid="toolBar"]:not([role="dialog"] *),
+main[role="main"] [data-testid^="tweetTextarea"]:not([role="dialog"] *),
+main[role="main"] [data-testid="tweetButtonInline"]:not([role="dialog"] *) {
   display: none !important;
 }
 
-/* ---- each post = one log entry ---- */
+/* ---- each post = one log entry, packed tight ---- */
 [data-testid="cellInnerDiv"] {
   border-bottom: 1px dashed var(--mx-faint);
 }
 article {
-  padding-top: 6px !important;
-  padding-bottom: 6px !important;
+  padding-top: 2px !important;
+  padding-bottom: 3px !important;
+}
+article [data-testid="tweetText"] {
+  margin: 1px 0 0 !important;
+}
+main[role="main"] article div {
+  row-gap: 0 !important;
+  margin-top: 0 !important;
+  margin-bottom: 0 !important;
 }
 [data-testid="User-Name"] {
   font-weight: 700;
@@ -130,29 +158,167 @@ article {
   color: var(--mx-dim) !important; /* @handle and timestamp, dimmer */
 }
 [data-testid="tweetText"] {
-  font-size: 15px !important;
-  line-height: 1.55 !important;
+  font-size: 14px !important;
+  line-height: 1.35 !important;
 }
-[data-testid="socialContext"] {
-  color: var(--mx-dim) !important;
-}
+[data-testid="socialContext"],
 [data-testid="tweet-text-show-more-link"] {
   color: var(--mx-dim) !important;
+  font-size: 12px !important;
 }
 
 /* ---- injected [image]/[video] links ---- */
 .mx-media-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 2px 18px;
-  margin: 6px 0 2px;
-  font-size: 13px;
+  gap: 0 16px;
+  margin: 2px 0 1px;
+  font-size: 12px;
 }
 .mx-media-links a {
   color: var(--mx-dim) !important;
 }
 .mx-media-links a::before {
   content: "└─ ";
+}
+
+/* ---- the [post] prompt, top-left ---- */
+#mx-post-btn {
+  position: fixed;
+  top: 6px;
+  left: 12px;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  padding: 3px 10px;
+  background: #000 !important;
+  color: var(--mx-green) !important;
+  border: 1px solid var(--mx-dark);
+  border-radius: 2px;
+  font-family: var(--mx-mono) !important;
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  line-height: 1.2;
+  cursor: pointer;
+  text-shadow: 0 0 6px rgba(0, 255, 65, 0.6);
+  -webkit-appearance: none;
+  appearance: none;
+}
+/* stand down while a dialog is open — on phones the composer is full-screen
+   and the prompt would sit on top of its close button */
+body:has([role="dialog"]) #mx-post-btn {
+  display: none !important;
+}
+#mx-post-btn:hover {
+  border-color: var(--mx-green);
+  background: #021a06 !important;
+}
+#mx-post-btn::before {
+  content: "user@x:~$";
+  color: var(--mx-dim);
+  font-weight: 400;
+}
+#mx-post-btn::after {
+  content: "_";
+  color: var(--mx-green);
+  animation: mx-blink 1.1s steps(1) infinite;
+}
+@keyframes mx-blink {
+  0%,
+  49% {
+    opacity: 1;
+  }
+  50%,
+  100% {
+    opacity: 0;
+  }
+}
+
+/* ---- the compose dialog: kept alive, repainted as a terminal window ----
+   X renders it in #layers (outside main), but style it defensively either
+   way so the "hide everything in main" rules above can't disarm it. */
+/* the dialog keeps a solid black fill; only its descendants go transparent
+   (listing both in one rule would blank out the fill) */
+[role="dialog"] {
+  background: #000 !important;
+  background-image: none !important;
+  border: 1px solid var(--mx-dim) !important;
+  border-radius: 3px !important;
+  color: var(--mx-green) !important;
+  font-family: var(--mx-mono) !important;
+  box-shadow: none !important;
+}
+[role="dialog"] * {
+  background-color: transparent !important;
+  background-image: none !important;
+  color: var(--mx-green) !important;
+  font-family: var(--mx-mono) !important;
+  border-color: var(--mx-dark) !important;
+  box-shadow: none !important;
+  text-shadow: 0 0 5px rgba(0, 255, 65, 0.35);
+}
+[role="dialog"] svg {
+  fill: currentColor !important;
+}
+[role="dialog"] [data-testid="Tweet-User-Avatar"],
+[role="dialog"] [data-testid^="UserAvatar-Container"] {
+  display: none !important;
+}
+[role="dialog"] [data-testid^="tweetTextarea"] {
+  display: block !important;
+  font-size: 15px !important;
+  line-height: 1.4 !important;
+}
+[role="dialog"] .public-DraftEditorPlaceholder-root,
+[role="dialog"] .public-DraftEditorPlaceholder-inner {
+  color: var(--mx-dark) !important;
+}
+[role="dialog"] [data-testid="toolBar"] {
+  display: flex !important;
+  border-top: 1px dashed var(--mx-faint) !important;
+  padding-top: 6px !important;
+}
+/* toolbar icons become terminal words */
+[role="dialog"] [data-testid="toolBar"] svg {
+  display: none !important;
+}
+[role="dialog"] [aria-label="Add photos or video"]::after,
+.mx-media-btn::after {
+  content: "[+image]";
+  color: var(--mx-green);
+  font-family: var(--mx-mono);
+  font-size: 13px;
+  white-space: nowrap;
+}
+[role="dialog"] [aria-label="Add a GIF"],
+[role="dialog"] [aria-label="Add poll"],
+[role="dialog"] [aria-label="Add emoji"],
+[role="dialog"] [aria-label="Schedule post"],
+[role="dialog"] [aria-label="Tag location"],
+[role="dialog"] [data-testid="createPollButton"],
+[role="dialog"] [data-testid="scheduleOption"] {
+  display: none !important;
+}
+[role="dialog"] [data-testid="tweetButton"] {
+  background: #000 !important;
+  border: 1px solid var(--mx-green) !important;
+  border-radius: 2px !important;
+  min-width: 0 !important;
+  padding: 4px 10px !important;
+  font-weight: 700 !important;
+}
+[role="dialog"] [data-testid="tweetButton"]::before {
+  content: "[ ";
+}
+[role="dialog"] [data-testid="tweetButton"]::after {
+  content: " ]";
+}
+[role="dialog"] [data-testid="tweetButton"][aria-disabled="true"] {
+  border-color: var(--mx-dark) !important;
+  opacity: 0.55 !important;
 }
 
 /* ---- sticky top bars ("Home", "Post" + back arrow) get hidden by JS ---- */
@@ -187,4 +353,57 @@ body::after {
 }
 ::-webkit-scrollbar-thumb:hover {
   background: var(--mx-dim);
+}
+
+/* ---- mobile: no bottom tab bar, no X logo bar, edge-to-edge text ---- */
+@media (max-width: 700px) {
+  /* bottom tab bar + its floating compose FAB (JS hides the wrapper too) */
+  [data-testid="BottomBar"],
+  [data-testid="AppTabBar_Home_Link"],
+  [data-testid="AppTabBar_Explore_Link"],
+  [data-testid="AppTabBar_Notifications_Link"],
+  [data-testid="AppTabBar_DirectMessage_Link"],
+  [data-testid="AppTabBar_Communities_Link"],
+  [data-testid="SideNav_NewTweet_Button"],
+  a[href="/compose/post"][aria-label],
+  a[href="/compose/tweet"][aria-label] {
+    display: none !important;
+  }
+
+  /* top bar: X logo, account switcher, anything in the mobile masthead.
+     Never use a sibling combinator here — on mobile the timeline pager is a
+     sibling of the masthead, and hiding it would blank the page. */
+  [data-testid="TopNavBar"],
+  [aria-label="X"],
+  [data-testid="AppTabBar_More_Menu"],
+  [data-testid="DashButton_ProfileIcon_Link"] {
+    display: none !important;
+  }
+
+  [data-testid="primaryColumn"] {
+    padding: 32px 8px 0 8px;
+  }
+  main[role="main"],
+  main[role="main"] * {
+    font-size: 13.5px;
+  }
+  [data-testid="tweetText"] {
+    font-size: 13.5px !important;
+  }
+  #mx-post-btn {
+    top: 4px;
+    left: 8px;
+    font-size: 13px;
+    padding: 2px 8px;
+  }
+  #mx-post-btn::before {
+    content: "~$";
+  }
+  [role="dialog"] {
+    border: none !important;
+  }
+  /* scanlines read as noise on a high-DPI phone screen */
+  body::after {
+    opacity: 0.5;
+  }
 }

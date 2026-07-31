@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "X Matrix Terminal",
-  "version": "1.0.0",
-  "description": "Turns X (Twitter) into a green-on-black coding terminal: no sidebars, no icons, no media — just each poster's name and their words, left-aligned in monospace, with [image]/[video] links. The whole page still scrolls normally.",
+  "version": "1.1.0",
+  "description": "Turns X (Twitter) into a green-on-black coding terminal: no sidebars, no icons, no media, no Grok — just each poster's name and their words in tight monospace lines, with [image]/[video] links and a [post] prompt top-left that composes posts with images. Mobile-ready; the page still scrolls normally.",
   "content_scripts": [
     {
       "matches": [

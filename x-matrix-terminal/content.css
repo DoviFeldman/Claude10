@@ -404,7 +404,19 @@ body::after {
   }
 
   [data-testid="primaryColumn"] {
-    padding: calc(env(safe-area-inset-top, 0px) + 78px) 8px 0 8px;
+    padding: calc(env(safe-area-inset-top, 0px) + 130px) 8px 0 8px;
+  }
+
+  /* X's compose/reply header — Drafts, the audience chip, and the send
+     button that reads "Reply" when you're replying — sits above the primary
+     column, so the column's padding doesn't move it and it lands back in the
+     dead strip. Push the whole compose view down instead; JS additionally
+     bumps the bar if X pins it with position:sticky/fixed. */
+  html.mx-compose main[role="main"] {
+    padding-top: calc(env(safe-area-inset-top, 0px) + 80px) !important;
+  }
+  html.mx-compose [data-testid="primaryColumn"] {
+    padding-top: 8px;
   }
   main[role="main"],
   main[role="main"] * {
@@ -413,12 +425,14 @@ body::after {
   [data-testid="tweetText"] {
     font-size: 13.5px !important;
   }
-  /* sit well clear of the browser's own top strip — flush against it the
-     buttons land under the URL bar / pull-down gesture area and can't be
-     tapped at all (Lemur, Chrome, Samsung Internet all reserve that edge) */
+  /* Sit well clear of the browser's own top strip. Android browsers that put
+     their toolbar at the bottom (Lemur, Samsung Internet, Chrome in some
+     modes) reserve roughly the top 48dp for the swipe-down-to-reveal-toolbar
+     gesture, and taps in that band never reach the page. 40px straddled it;
+     80px clears it with room to spare. */
   #mx-post-btn,
   #mx-right-nav {
-    top: calc(env(safe-area-inset-top, 0px) + 40px);
+    top: calc(env(safe-area-inset-top, 0px) + 80px);
     font-size: 13px;
   }
   #mx-post-btn {

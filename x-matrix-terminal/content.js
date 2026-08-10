@@ -93,11 +93,42 @@
       .forEach((el) => {
         if (el.classList.contains("mx-hidden")) return;
         if (el.querySelector('[data-testid="cellInnerDiv"], article')) return;
+        // never eat the composer's own header — it holds the send button
+        if (
+          el.querySelector(
+            '[data-testid="tweetButton"], [data-testid^="tweetTextarea"]'
+          )
+        ) {
+          return;
+        }
         const pos = getComputedStyle(el).position;
         if (pos === "sticky" || pos === "fixed") {
           el.classList.add("mx-hidden");
         }
       });
+  }
+
+  // Anything X pins to the very top of the viewport lands in the strip that
+  // mobile browsers reserve for their own toolbar gesture, where taps never
+  // reach the page. The compose/reply header is the one that matters: it
+  // carries the send button (labelled "Reply" when replying). Push it down.
+  const TOP_SAFE = 80;
+
+  function lowerPinnedBars() {
+    if (!PHONE()) return;
+    const anchor = document.querySelector('[data-testid="tweetButton"]');
+    if (!anchor) return;
+
+    let el = anchor;
+    for (let i = 0; el && el !== document.body && i < 8; i++) {
+      const pos = getComputedStyle(el).position;
+      if (pos === "sticky" || pos === "fixed") {
+        const want = `calc(env(safe-area-inset-top, 0px) + ${TOP_SAFE}px)`;
+        if (el.style.top !== want) el.style.top = want;
+        return;
+      }
+      el = el.parentElement;
+    }
   }
 
   // Walk up from a doomed node to the floating wrapper X positioned it in, so
@@ -312,6 +343,7 @@
     markComposer();
     labelComposer();
     hideStickyBars();
+    lowerPinnedBars();
     hideGrok();
     hideMobileChrome();
     restoreEmojis();

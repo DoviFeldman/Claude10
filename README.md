@@ -24,11 +24,31 @@ work done on them at all.
 What mobile mode does (viewports ≤ 700px): removes X's bottom tab bar, its
 floating compose button and the top X-logo masthead; drops padding to the
 screen edge; halves the scanline overlay; and drops the `[post]` prompt to
-`~$ [post]`. The `[post]` / `[notifs]` / `[msgs]` buttons sit 40px down from
-the top of the viewport (plus any safe-area inset) so they clear the
-browser's own URL bar and pull-to-refresh strip — flush to the top edge they
-end up untappable in Lemur, Chrome and Samsung Internet alike — and they're
-padded out to ~38px tall so they're a real touch target.
+`~$ [post]`.
+
+### The reserved top strip
+
+Android browsers that put their toolbar at the **bottom** (Lemur, Samsung
+Internet, Chrome in some modes) reserve roughly the top **48dp** of the
+viewport for the swipe-down-to-reveal-toolbar gesture. Taps in that band
+never reach the page, so anything pinned up there is dead — it looks
+pressable and simply does nothing.
+
+Everything pinned to the top therefore sits at **80px** (plus any safe-area
+inset), which clears that band with room to spare:
+
+- `[post]` / `[notifs]` / `[msgs]`, padded to ~38px tall for a real touch
+  target;
+- X's own compose/reply header — the one holding **Drafts**, the audience
+  chip, and the send button that reads **Reply** when you're replying. It
+  lives *above* the primary column, so the column's padding doesn't move it;
+  `content.css` pushes the whole compose view down and `lowerPinnedBars()`
+  additionally rewrites the bar's `top` when X pins it with
+  `position: sticky` / `fixed`.
+
+If a button is visible but tapping it does nothing on a given browser, this
+strip is the first thing to suspect — raise the `80px` in the media query and
+the `TOP_SAFE` constant in `content.js` together.
 
 ## Install (Load unpacked)
 

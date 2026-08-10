@@ -165,32 +165,133 @@
       });
   }
 
-  // Open X's real composer. Clicking X's own (hidden) compose entry point
-  // keeps SPA routing and the upload pipeline intact, so images work; the
-  // href fallback covers pages where that button isn't rendered.
-  function openComposer() {
-    const entry = document.querySelector(
-      '[data-testid="SideNav_NewTweet_Button"], a[href="/compose/post"], a[href="/compose/tweet"]'
-    );
+  // Navigate the way X does: click X's own (hidden) nav entry so SPA routing,
+  // draft state and the upload pipeline all stay intact. The href fallback
+  // covers pages where that entry isn't rendered.
+  function go(selectors, path) {
+    const entry = document.querySelector(selectors);
     if (entry) {
       entry.click();
       return;
     }
-    location.assign("/compose/post");
+    location.assign(path);
   }
 
-  function mountPostButton() {
-    if (document.getElementById("mx-post-btn")) return;
+  function mountButtons() {
+    if (!document.getElementById("mx-post-btn")) {
+      const post = mkButton("mx-post-btn", "[post]", "Compose a post", () =>
+        go(
+          '[data-testid="SideNav_NewTweet_Button"], a[href="/compose/post"], a[href="/compose/tweet"]',
+          "/compose/post"
+        )
+      );
+      document.body.appendChild(post);
+    }
+    if (!document.getElementById("mx-right-nav")) {
+      const nav = document.createElement("div");
+      nav.id = "mx-right-nav";
+      nav.appendChild(
+        mkButton("mx-notifs-btn", "[notifs]", "Notifications", () =>
+          go(
+            '[data-testid="AppTabBar_Notifications_Link"], a[href="/notifications"]',
+            "/notifications"
+          )
+        )
+      );
+      nav.appendChild(
+        mkButton("mx-msgs-btn", "[msgs]", "Messages", () =>
+          go(
+            '[data-testid="AppTabBar_DirectMessage_Link"], a[href="/messages"]',
+            "/messages"
+          )
+        )
+      );
+      document.body.appendChild(nav);
+    }
+  }
+
+  function mkButton(id, label, title, onClick) {
     const btn = document.createElement("button");
-    btn.id = "mx-post-btn";
+    btn.id = id;
+    btn.className = "mx-btn";
     btn.type = "button";
-    btn.textContent = "[post]";
-    btn.title = "Compose a post (images supported)";
+    btn.textContent = label;
+    btn.title = title;
     btn.addEventListener("click", (e) => {
       e.preventDefault();
-      openComposer();
+      onClick();
     });
-    document.body.appendChild(btn);
+    return btn;
+  }
+
+  // On phones X renders /compose as a PAGE inside main, not as a dialog, so
+  // the "strip the reading view" rules would eat the text field and the
+  // toolbar and leave nothing to type into. Flag the route on <html> and tag
+  // the composer's root so the CSS can carve it out.
+  function markComposer() {
+    // /compose, /compose/post, /i/flow/compose — but not a profile like
+    // /composer
+    const composing = /(^|\/)compose(\/|$)/.test(location.pathname);
+    document.documentElement.classList.toggle("mx-compose", composing);
+
+    document
+      .querySelectorAll('[role="dialog"]')
+      .forEach((d) =>
+        d.classList.toggle(
+          "mx-composer",
+          !!d.querySelector('[data-testid^="tweetTextarea"]')
+        )
+      );
+
+    const col = document.querySelector('[data-testid="primaryColumn"]');
+    if (col) col.classList.toggle("mx-composer", composing);
+  }
+
+  // Hidden media still occupies space: X wraps photos and cards in
+  // aspect-ratio boxes that keep their height once the <img> inside is gone,
+  // which is the empty black rectangle under a post. Collapse the whole media
+  // subtree instead — climb from the media node until the next step up would
+  // swallow text, a name, or our own [image] link, then hide that.
+  const MEDIA_SEL = [
+    '[data-testid="tweetPhoto"]',
+    '[data-testid="videoComponent"]',
+    '[data-testid="videoPlayer"]',
+    '[data-testid="card.wrapper"]',
+    '[data-testid="previewInterstitial"]',
+    '[data-testid="card.layoutLarge.media"]',
+    '[data-testid="card.layoutSmall.media"]',
+    '[data-testid="testCondensedMedia"]',
+    '[data-testid="article-cover-image"]'
+  ].join(",");
+
+  const KEEP_SEL =
+    '[data-testid="tweetText"], [data-testid="User-Name"], [data-testid="socialContext"], .mx-media-links';
+
+  function collapseMedia(article) {
+    // X recycles timeline cells, so a box that held media a moment ago can be
+    // re-rendered as plain text. Drop the mark from anything that no longer
+    // holds media before re-marking, or a recycled post would go blank.
+    article.querySelectorAll(".mx-media-box").forEach((box) => {
+      if (!box.matches(MEDIA_SEL) && !box.querySelector(MEDIA_SEL)) {
+        box.classList.remove("mx-media-box");
+      }
+    });
+
+    article.querySelectorAll(MEDIA_SEL).forEach((media) => {
+      if (media.closest(".mx-media-box")) return;
+      let top = media;
+      let parent = media.parentElement;
+      while (
+        parent &&
+        parent !== article &&
+        !parent.matches("article") &&
+        !parent.querySelector(KEEP_SEL)
+      ) {
+        top = parent;
+        parent = parent.parentElement;
+      }
+      top.classList.add("mx-media-box");
+    });
   }
 
   // The composer's media button is icon-only. Tag it so the CSS can print
@@ -207,7 +308,8 @@
   }
 
   function scan() {
-    mountPostButton();
+    mountButtons();
+    markComposer();
     labelComposer();
     hideStickyBars();
     hideGrok();
@@ -215,7 +317,10 @@
     restoreEmojis();
     document
       .querySelectorAll('article[data-testid="tweet"]')
-      .forEach(processArticle);
+      .forEach((article) => {
+        processArticle(article);
+        collapseMedia(article);
+      });
   }
 
   let scheduled = false;

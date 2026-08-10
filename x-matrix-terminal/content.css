@@ -97,12 +97,13 @@ main[role="main"] a:hover {
 }
 
 /* ---- strip the UI out of every post: icons, pictures, buttons ----
-   The :not([role="dialog"] *) guards matter only when X happens to render
-   the compose modal inside main instead of #layers — the composer keeps its
-   icons and image thumbnails either way. */
-main[role="main"] svg:not([role="dialog"] *),
-main[role="main"] img:not([role="dialog"] *),
-main[role="main"] video:not([role="dialog"] *),
+   The :not(.mx-composer *) guards keep the composer intact: on phones X
+   renders /compose as a PAGE inside main, not as a dialog, so without them
+   the text field, its icons and the image thumbnails all get stripped and
+   there is nothing left to type into. JS tags the composer root. */
+main[role="main"] svg:not(.mx-composer *),
+main[role="main"] img:not(.mx-composer *),
+main[role="main"] video:not(.mx-composer *),
 [data-testid="tweetPhoto"],
 [data-testid="videoComponent"],
 [data-testid="videoPlayer"],
@@ -121,12 +122,18 @@ article div:has(> [data-testid="Tweet-User-Avatar"]) {
   display: none !important;
 }
 
-/* inline composer + tab bar in the timeline: this is a reading terminal.
-   Scoped to main so the real compose dialog (see below) stays usable. */
-main[role="main"] [role="tablist"]:not([role="dialog"] *),
-main[role="main"] [data-testid="toolBar"]:not([role="dialog"] *),
-main[role="main"] [data-testid^="tweetTextarea"]:not([role="dialog"] *),
-main[role="main"] [data-testid="tweetButtonInline"]:not([role="dialog"] *) {
+/* Inline composer + tab bar in the timeline: this is a reading terminal.
+   Gated on html.mx-compose (set by JS on /compose routes) so that the real
+   composer is never hidden — a CSS-only guard can't tell the two apart on
+   mobile, where both live in main. */
+html:not(.mx-compose) main[role="main"] [role="tablist"]:not(.mx-composer *),
+html:not(.mx-compose) main[role="main"] [data-testid="toolBar"]:not(.mx-composer *),
+html:not(.mx-compose) main[role="main"] [data-testid^="tweetTextarea"]:not(.mx-composer *),
+html:not(.mx-compose) main[role="main"] [data-testid="tweetButtonInline"]:not(.mx-composer *) {
+  display: none !important;
+}
+/* tab bar stays gone even while composing */
+html.mx-compose main[role="main"] [role="tablist"]:not(.mx-composer *) {
   display: none !important;
 }
 
@@ -182,12 +189,8 @@ main[role="main"] article div {
   content: "└─ ";
 }
 
-/* ---- the [post] prompt, top-left ---- */
-#mx-post-btn {
-  position: fixed;
-  top: 6px;
-  left: 12px;
-  z-index: 2147483646;
+/* ---- the terminal buttons: [post] top-left, [notifs] [msgs] top-right ---- */
+.mx-btn {
   display: flex;
   align-items: center;
   gap: 6px;
@@ -206,35 +209,40 @@ main[role="main"] article div {
   text-shadow: 0 0 6px rgba(0, 255, 65, 0.6);
   -webkit-appearance: none;
   appearance: none;
+  -webkit-tap-highlight-color: rgba(0, 255, 65, 0.25);
 }
-/* stand down while a dialog is open — on phones the composer is full-screen
-   and the prompt would sit on top of its close button */
-body:has([role="dialog"]) #mx-post-btn {
-  display: none !important;
-}
-#mx-post-btn:hover {
+.mx-btn:hover,
+.mx-btn:active {
   border-color: var(--mx-green);
   background: #021a06 !important;
+}
+#mx-post-btn {
+  position: fixed;
+  top: 6px;
+  left: 12px;
+  z-index: 2147483646;
 }
 #mx-post-btn::before {
   content: "user@x:~$";
   color: var(--mx-dim);
   font-weight: 400;
 }
-#mx-post-btn::after {
-  content: "_";
-  color: var(--mx-green);
-  animation: mx-blink 1.1s steps(1) infinite;
+#mx-right-nav {
+  position: fixed;
+  top: 6px;
+  right: 12px;
+  z-index: 2147483646;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
-@keyframes mx-blink {
-  0%,
-  49% {
-    opacity: 1;
-  }
-  50%,
-  100% {
-    opacity: 0;
-  }
+/* stand down while composing — the composer owns the screen on phones and
+   these would sit on top of its close button */
+body:has([role="dialog"]) #mx-post-btn,
+body:has([role="dialog"]) #mx-right-nav,
+html.mx-compose #mx-post-btn,
+html.mx-compose #mx-right-nav {
+  display: none !important;
 }
 
 /* ---- the compose dialog: kept alive, repainted as a terminal window ----
@@ -260,32 +268,40 @@ body:has([role="dialog"]) #mx-post-btn {
   box-shadow: none !important;
   text-shadow: 0 0 5px rgba(0, 255, 65, 0.35);
 }
-[role="dialog"] svg {
+.mx-composer svg {
   fill: currentColor !important;
 }
-[role="dialog"] [data-testid="Tweet-User-Avatar"],
-[role="dialog"] [data-testid^="UserAvatar-Container"] {
+.mx-composer [data-testid="Tweet-User-Avatar"],
+.mx-composer [data-testid^="UserAvatar-Container"] {
   display: none !important;
 }
-[role="dialog"] [data-testid^="tweetTextarea"] {
+/* give the editor real height and a visible caret — it has to be big enough
+   to tap, or the on-screen keyboard never comes up */
+.mx-composer [data-testid^="tweetTextarea"],
+.mx-composer .public-DraftEditor-content,
+.mx-composer [contenteditable="true"] {
   display: block !important;
-  font-size: 15px !important;
-  line-height: 1.4 !important;
+  min-height: 110px !important;
+  font-size: 16px !important;
+  line-height: 1.45 !important;
+  caret-color: var(--mx-green) !important;
+  -webkit-user-select: text !important;
+  user-select: text !important;
 }
-[role="dialog"] .public-DraftEditorPlaceholder-root,
-[role="dialog"] .public-DraftEditorPlaceholder-inner {
+.mx-composer .public-DraftEditorPlaceholder-root,
+.mx-composer .public-DraftEditorPlaceholder-inner {
   color: var(--mx-dark) !important;
 }
-[role="dialog"] [data-testid="toolBar"] {
+.mx-composer [data-testid="toolBar"] {
   display: flex !important;
   border-top: 1px dashed var(--mx-faint) !important;
   padding-top: 6px !important;
 }
 /* toolbar icons become terminal words */
-[role="dialog"] [data-testid="toolBar"] svg {
+.mx-composer [data-testid="toolBar"] svg {
   display: none !important;
 }
-[role="dialog"] [aria-label="Add photos or video"]::after,
+.mx-composer [aria-label="Add photos or video"]::after,
 .mx-media-btn::after {
   content: "[+image]";
   color: var(--mx-green);
@@ -293,16 +309,16 @@ body:has([role="dialog"]) #mx-post-btn {
   font-size: 13px;
   white-space: nowrap;
 }
-[role="dialog"] [aria-label="Add a GIF"],
-[role="dialog"] [aria-label="Add poll"],
-[role="dialog"] [aria-label="Add emoji"],
-[role="dialog"] [aria-label="Schedule post"],
-[role="dialog"] [aria-label="Tag location"],
-[role="dialog"] [data-testid="createPollButton"],
-[role="dialog"] [data-testid="scheduleOption"] {
+.mx-composer [aria-label="Add a GIF"],
+.mx-composer [aria-label="Add poll"],
+.mx-composer [aria-label="Add emoji"],
+.mx-composer [aria-label="Schedule post"],
+.mx-composer [aria-label="Tag location"],
+.mx-composer [data-testid="createPollButton"],
+.mx-composer [data-testid="scheduleOption"] {
   display: none !important;
 }
-[role="dialog"] [data-testid="tweetButton"] {
+.mx-composer [data-testid="tweetButton"] {
   background: #000 !important;
   border: 1px solid var(--mx-green) !important;
   border-radius: 2px !important;
@@ -310,19 +326,26 @@ body:has([role="dialog"]) #mx-post-btn {
   padding: 4px 10px !important;
   font-weight: 700 !important;
 }
-[role="dialog"] [data-testid="tweetButton"]::before {
+.mx-composer [data-testid="tweetButton"]::before {
   content: "[ ";
 }
-[role="dialog"] [data-testid="tweetButton"]::after {
+.mx-composer [data-testid="tweetButton"]::after {
   content: " ]";
 }
-[role="dialog"] [data-testid="tweetButton"][aria-disabled="true"] {
+.mx-composer [data-testid="tweetButton"][aria-disabled="true"] {
   border-color: var(--mx-dark) !important;
   opacity: 0.55 !important;
 }
 
 /* ---- sticky top bars ("Home", "Post" + back arrow) get hidden by JS ---- */
 .mx-hidden {
+  display: none !important;
+}
+
+/* ---- the aspect-ratio boxes X leaves behind once its media is hidden.
+        JS marks the whole media subtree so no empty black rectangle is left
+        under a post — the [image] link stands in for it. ---- */
+.mx-media-box {
   display: none !important;
 }
 
@@ -381,7 +404,7 @@ body::after {
   }
 
   [data-testid="primaryColumn"] {
-    padding: 32px 8px 0 8px;
+    padding: calc(env(safe-area-inset-top, 0px) + 78px) 8px 0 8px;
   }
   main[role="main"],
   main[role="main"] * {
@@ -390,11 +413,25 @@ body::after {
   [data-testid="tweetText"] {
     font-size: 13.5px !important;
   }
-  #mx-post-btn {
-    top: 4px;
-    left: 8px;
+  /* sit well clear of the browser's own top strip — flush against it the
+     buttons land under the URL bar / pull-down gesture area and can't be
+     tapped at all (Lemur, Chrome, Samsung Internet all reserve that edge) */
+  #mx-post-btn,
+  #mx-right-nav {
+    top: calc(env(safe-area-inset-top, 0px) + 40px);
     font-size: 13px;
-    padding: 2px 8px;
+  }
+  #mx-post-btn {
+    left: 8px;
+  }
+  #mx-right-nav {
+    right: 8px;
+    gap: 6px;
+  }
+  .mx-btn {
+    /* ~38px tall: a real touch target, not a 20px sliver */
+    padding: 10px 12px;
+    font-size: 13px;
   }
   #mx-post-btn::before {
     content: "~$";

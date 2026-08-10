@@ -8,7 +8,27 @@ its own folder and is completely standalone — install whichever one you want
 |---|---|---|
 | `x-blackout/` | **X Blackout — Hidden Media** | Every image and video on the timeline is covered by a black box. Click a box to reveal the image; videos show a ▶ play button — click it and the video plays. |
 | `x-text-mode/` | **X Text Mode** | Removes all visual UI — images, videos, profile pictures, icons — everywhere (timeline **and** post detail pages). Each post is just the author's name, then their text (with X's native "Show more"), plus an `Open image ↗` / `Open video ↗` link that opens the media in a new tab. Keeps X's normal font, layout, and dark mode; the side areas stay but show text only. |
-| `x-matrix-terminal/` | **X Matrix Terminal** | Full green-on-black terminal. Sidebars, tab bar, icons, buttons, the Grok chip — gone. Tight left-aligned monospace lines with a `>` prompt before each poster's name, `[image]` / `[video]` links under the text, CRT scanlines, and a green scrollbar. A `user@x:~$ [post]` prompt sits top-left for composing (images included). Mobile-optimised. The page scrolls normally — see note below. |
+| `x-matrix-terminal/` | **X Matrix Terminal** | Full green-on-black terminal. Sidebars, tab bar, icons, buttons, the Grok chip — gone. Tight left-aligned monospace lines with a `>` prompt before each poster's name, `[image]` / `[video]` links under the text, CRT scanlines, and a green scrollbar. A `user@x:~$ [post]` prompt sits top-left for composing (images included), with `[notifs]` and `[msgs]` top-right. **The only mobile-optimised extension of the three** — see below. |
+
+## Mobile
+
+**`x-matrix-terminal/` is the only extension optimised for mobile.** The other
+two (`x-blackout/`, `x-text-mode/`) are desktop-only and have had no mobile
+work done on them at all.
+
+> **Convention:** any request to "update the Chrome extension for mobile" —
+> or any mobile fix, mobile tweak, or mobile layout change described without
+> naming a folder — refers to **`x-matrix-terminal/` only**, unless another
+> extension is named explicitly.
+
+What mobile mode does (viewports ≤ 700px): removes X's bottom tab bar, its
+floating compose button and the top X-logo masthead; drops padding to the
+screen edge; halves the scanline overlay; and drops the `[post]` prompt to
+`~$ [post]`. The `[post]` / `[notifs]` / `[msgs]` buttons sit 40px down from
+the top of the viewport (plus any safe-area inset) so they clear the
+browser's own URL bar and pull-to-refresh strip — flush to the top edge they
+end up untappable in Lemur, Chrome and Samsung Internet alike — and they're
+padded out to ~38px tall so they're a real touch target.
 
 ## Install (Load unpacked)
 
@@ -43,18 +63,44 @@ All three extensions deliberately avoid that:
 
 ## Posting from X Matrix Terminal
 
-The `[post]` prompt in the top-left opens **X's own compose dialog** rather
-than a home-made form — clicking it triggers X's hidden compose entry point,
-so posting, drafts, and image upload all run through X's real pipeline and
-keep working. The dialog is repainted as a terminal window: black, green,
-monospace, with the media button reading `[+image]` and the send button
-reading `[ Post ]`. GIF / poll / emoji / schedule / location buttons are
-hidden to keep it clean.
+The `[post]` prompt top-left opens **X's own composer** rather than a
+home-made form — clicking it triggers X's hidden compose entry point, so
+posting, drafts, and image upload all run through X's real pipeline. The
+composer is repainted as a terminal window: black, green, monospace, with the
+media button reading `[+image]` and the send button reading `[ Post ]`. GIF /
+poll / emoji / schedule / location are hidden to keep it clean.
 
-On phones (`max-width: 700px`) the bottom tab bar, the floating compose FAB,
-and the top X-logo masthead are all removed, padding shrinks to the screen
-edge, and the scanline overlay is halved — the `[post]` prompt collapses to
-`~$ [post]`.
+`[notifs]` and `[msgs]` sit top-right in the same style and route through
+X's own nav links, so they're SPA navigations, not page loads.
+
+### The composer is a page on mobile, a dialog on desktop
+
+This is the one thing to know before touching the CSS. On desktop, `/compose`
+opens a `[role="dialog"]` in `#layers`, outside `main` — so the rules that
+strip the reading view can't reach it. **On mobile there is no dialog**: X
+renders `/compose` as a page inside `main`, which means a
+`:not([role="dialog"] *)` guard doesn't protect it, and the composer's text
+field, toolbar and image button all get stripped along with the timeline's.
+The result is a compose screen you cannot type into — no text field, so
+tapping never raises the keyboard.
+
+So the composer hides are gated on `html.mx-compose`, a class `content.js`
+sets from the URL, and the composer's root is tagged `.mx-composer` (the
+dialog on desktop, `[data-testid="primaryColumn"]` on mobile). Every
+composer style hangs off `.mx-composer`. Route-gating is the only thing that
+works here, because on mobile the real composer and the inline timeline
+composer are structurally identical.
+
+### Empty media boxes
+
+Hiding `[data-testid="tweetPhoto"]` isn't enough: X wraps media in
+aspect-ratio boxes (`padding-bottom: 56%; height: 0`) that keep their height
+once the `<img>` inside them is gone, leaving a tall empty black rectangle
+under the post. `collapseMedia()` climbs from each media node up to the last
+ancestor that holds no text, name, or injected `[image]` link, and hides that
+whole subtree — so a quote-tweet keeps its text and loses only its picture.
+The mark self-heals each pass, because X recycles timeline cells and a stale
+hide-class would eventually blank out a plain-text post.
 
 ## Notes
 
